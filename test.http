@@ -1,0 +1,11 @@
+
+### CREATE CLIENT
+PUT http://localhost:8000/api/transactions/2
+Content-Type: application/json
+Authorization: Bearer 3|CM4qtDRyahFXVGsGdsaW7TkL8vQyybn28SiUwhPq1417159f
+
+{
+  "statut": "valide",
+  "note": "Okay, viré"
+}
+
