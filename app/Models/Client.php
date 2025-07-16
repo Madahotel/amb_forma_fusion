@@ -9,12 +9,13 @@ class Client extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'email', 'phone', 'montant_paye', 'revendeur_id', 'date_paiement'];
+    protected $fillable = ['name', 'email', 'pays','phone', 'montant_paye', 'revendeur_id', 'date_paiement'];
 
-    public function revendeur()
-    {
-        return $this->belongsTo(User::class, 'revendeur_id');
-    }
+
+public function revendeur()
+{
+    return $this->belongsTo(User::class, 'revendeur_id');
+}
     
 }
 

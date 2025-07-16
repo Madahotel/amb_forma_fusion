@@ -8,20 +8,30 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Notifications\RetraitDemandeNotification;
 
 class TransactionController extends Controller
 {
     // REVENUDEUR: Liste de ses propres transactions
-    public function index()
-    {
-        $user = Auth::user();
-        if ($user->role === 'revendeur') {
-            return $user->transactions()->latest()->get();
-        }
+public function index(Request $request)
+{
+    $user = $request->user();
 
-        // ADMIN: liste de tout
-        return Transaction::with('revendeur')->latest()->get();
+    $query = Transaction::query();
+
+    // Revendeur: on filtre par son ID
+    if ($user->role === 'revendeur') {
+        $query->where('revendeur_id', $user->id);
     }
+
+    // Filtres par période
+    if ($request->filled('start') && $request->filled('end')) {
+        $query->whereBetween('created_at', [$request->start, $request->end]);
+    }
+
+    return response()->json($query->orderBy('created_at', 'desc')->get());
+}
+
 
     // REVENUDEUR: Créer une demande
     public function store(Request $request)
@@ -38,8 +48,16 @@ class TransactionController extends Controller
             'statut' => 'en_attente',
             'date_demande' => Carbon::now(),
         ]);
+        
+        
 
         return response()->json(['message' => 'Demande envoyée', 'transaction' => $transaction]);
+               // Notify admins
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(new RetraitDemandeNotification($transaction));
+        }
+            
     }
 
 public function update(Request $request, $id)

@@ -1,11 +1,9 @@
-
-### CREATE CLIENT
-PUT http://localhost:8000/api/transactions/2
+### LOGIN
+GET http://localhost:8000/api/clients
 Content-Type: application/json
-Authorization: Bearer 3|CM4qtDRyahFXVGsGdsaW7TkL8vQyybn28SiUwhPq1417159f
+Authorization:  Bearer 2|gEVI6NRjyAAkxNlX2tKl0WRbYAA7slOQrmSABocA073037e1
 
 {
-  "statut": "valide",
-  "note": "Okay, viré"
+  "email": "admin@example.com",
+  "password": "password"
 }
-
