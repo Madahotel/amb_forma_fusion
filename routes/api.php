@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\PdfExportController;
-use App\Http\Controllers\Api\NotificationController; // Import controller
+use App\Http\Controllers\Api\NotificationController; 
 
 /*
 |--------------------------------------------------------------------------

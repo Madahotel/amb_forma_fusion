@@ -13,11 +13,11 @@ class UserController extends Controller
 {
     public function registerRevendeur(Request $request)
     {
-        // ✅ Validation
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:6|confirmed'
+            'pays' => 'required|string|max:100',
+            'password' => 'required|min:6|confirmed', // garde confirmed si tu envoies confirmation
         ]);
 
         if ($validator->fails()) {
@@ -26,20 +26,25 @@ class UserController extends Controller
             ], 422);
         }
 
-        // ✅ Créer revendeur
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'revendeur',
             'solde' => 0,
+            'pays' => $request->pays,  // Ajoute cette ligne
         ]);
+
+        // Exemple : récupérer le code_affiliation du user (généré dans User model)
+        $code_affiliation = $user->code_affiliation ?? null;
 
         return response()->json([
             'message' => 'Revendeur créé avec succès',
-            'user' => $user
+            'user' => $user,
+            'code_affiliation' => $code_affiliation,
         ], 201);
     }
+
 
     public function indexRevendeurs()
     {
@@ -76,6 +81,4 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Revendeur supprimé']);
     }
-
-
 }

@@ -20,4 +20,8 @@ class Transaction extends Model
     {
         return $this->belongsTo(User::class, 'admin_id_validator');
     }
+public function client()
+{
+    return $this->belongsTo(Client::class);
+}
 }

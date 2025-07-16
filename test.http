@@ -1,5 +1,5 @@
 ### LOGIN
-GET http://localhost:8000/api/clients
+GET http://localhost:8000/api/transactions
 Content-Type: application/json
 Authorization:  Bearer 2|gEVI6NRjyAAkxNlX2tKl0WRbYAA7slOQrmSABocA073037e1
 

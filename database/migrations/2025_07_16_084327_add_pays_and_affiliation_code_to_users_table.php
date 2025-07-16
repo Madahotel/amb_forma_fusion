@@ -20,10 +20,11 @@ public function up()
     /**
      * Reverse the migrations.
      */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            //
-        });
-    }
+public function down(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        $table->dropColumn('pays');
+        $table->dropColumn('code_affiliation');
+    });
+}
 };

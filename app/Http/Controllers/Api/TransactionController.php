@@ -12,25 +12,26 @@ use App\Notifications\RetraitDemandeNotification;
 
 class TransactionController extends Controller
 {
-    // REVENUDEUR: Liste de ses propres transactions
 public function index(Request $request)
 {
     $user = $request->user();
 
-    $query = Transaction::query();
+    $query = Transaction::with(['client', 'revendeur']); // ⬅️ Ajout important
 
-    // Revendeur: on filtre par son ID
     if ($user->role === 'revendeur') {
         $query->where('revendeur_id', $user->id);
     }
 
-    // Filtres par période
     if ($request->filled('start') && $request->filled('end')) {
         $query->whereBetween('created_at', [$request->start, $request->end]);
     }
 
-    return response()->json($query->orderBy('created_at', 'desc')->get());
+    return response()->json(
+        $query->orderBy('created_at', 'desc')->get()
+    );
 }
+
+
 
 
     // REVENUDEUR: Créer une demande
