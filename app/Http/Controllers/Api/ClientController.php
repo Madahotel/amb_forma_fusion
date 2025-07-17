@@ -16,63 +16,63 @@ class ClientController extends Controller
         return Client::with('revendeur')->latest()->get();
     }
 
-public function registerClient(Request $request)
-{
-    $request->validate([
-        'nom' => 'required|string|max:255',
-        'email' => 'required|email|unique:clients',
-        'pays' => 'nullable|string|max:100',
-        'code_affiliation' => 'nullable|string|exists:users,code_affiliation',
-    ]);
+    public function registerClient(Request $request)
+    {
+        $request->validate([
+            'nom' => 'required|string|max:255',
+            'email' => 'required|email|unique:clients',
+            'pays' => 'nullable|string|max:100',
+            'code_affiliation' => 'nullable|string|exists:users,code_affiliation',
+        ]);
 
-    $client = new Client();
-    $client->nom = $request->nom;
-    $client->email = $request->email;
-    $client->pays = $request->pays;
+        $client = new Client();
+        $client->nom = $request->nom;
+        $client->email = $request->email;
+        $client->pays = $request->pays;
 
-    if ($request->filled('code_affiliation')) {
-        $revendeur = User::where('code_affiliation', $request->code_affiliation)->first();
-        $client->revendeur_id = $revendeur->id;
+        if ($request->filled('code_affiliation')) {
+            $revendeur = User::where('code_affiliation', $request->code_affiliation)->first();
+            $client->revendeur_id = $revendeur->id;
+        }
+
+        $client->save();
+
+        return response()->json([
+            'message' => 'Client enregistré avec succès',
+            'client' => $client,
+            'revendeur_affilie' => $client->revendeur?->name,
+        ]);
     }
-
-    $client->save();
-
-    return response()->json([
-        'message' => 'Client enregistré avec succès',
-        'client' => $client,
-        'revendeur_affilie' => $client->revendeur?->name,
-    ]);
-}
 
 
 
     // STORE CLIENT
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string',
-        'email' => 'required|email|unique:clients',
-        'password' => 'required|string|min:6',
-        'ref' => 'nullable|string' // code affiliation
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|email|unique:clients',
+            'password' => 'required|string|min:6',
+            'ref' => 'nullable|string' // code affiliation
+        ]);
 
-    $client = new Client();
-    $client->name = $validated['name'];
-    $client->email = $validated['email'];
-    $client->password = bcrypt($validated['password']);
+        $client = new Client();
+        $client->name = $validated['name'];
+        $client->email = $validated['email'];
+        $client->password = bcrypt($validated['password']);
 
-    // Raha nisy code ref
-    if (!empty($request->ref)) {
-        $revendeur = User::where('code_affiliation', $request->ref)->where('role', 'revendeur')->first();
-        if ($revendeur) {
-            $client->revendeur_id = $revendeur->id;
+        // Raha nisy code ref
+        if (!empty($request->ref)) {
+            $revendeur = User::where('code_affiliation', $request->ref)->where('role', 'revendeur')->first();
+            if ($revendeur) {
+                $client->revendeur_id = $revendeur->id;
+            }
         }
+
+        $client->save();
+
+        return response()->json(['message' => 'Client créé avec succès', 'client' => $client]);
     }
-
-    $client->save();
-
-    return response()->json(['message' => 'Client créé avec succès', 'client' => $client]);
-}
 
 
 
@@ -100,5 +100,10 @@ public function store(Request $request)
 
         return response()->json(['message' => 'Client supprimé']);
     }
-}
 
+    public function getClientsByRevendeur($revendeurId)
+    {
+        $clients = Client::where('revendeur_id', $revendeurId)->get();
+        return response()->json($clients);
+    }
+}

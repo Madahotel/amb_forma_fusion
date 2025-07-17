@@ -31,6 +31,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 📁 Clients (CRUD)
     Route::apiResource('clients', ClientController::class);
+    // Route::get('/clients/revendeur/{revendeur_id}', [ClientController::class, 'getByRevendeur']);
+
 
     // 📄 Transactions (accessible à tous pour list & show)
     Route::get('/transactions', [TransactionController::class, 'index']);
