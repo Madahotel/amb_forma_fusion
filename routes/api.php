@@ -31,7 +31,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // 📁 Clients (CRUD)
     Route::apiResource('clients', ClientController::class);
-    // Route::get('/clients/revendeur/{revendeur_id}', [ClientController::class, 'getByRevendeur']);
+    Route::get('/import-client/{email}', [ClientController::class, 'importClientFromExternal']);
+    Route::get('/mes-clients', [ClientController::class, 'myClients']);
+    Route::patch('/clients/{id}/paiement', [ClientController::class, 'updateStatutPaiement']);
 
 
     // 📄 Transactions (accessible à tous pour list & show)
@@ -63,10 +65,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // 📊 Dashboard & Export Excel
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
         Route::get('/export-transactions', [ExportController::class, 'exportTransactions']);
+        // Route::post('/valider-paiement/{id}', [AdminController::class, 'validerPaiement']);
+        Route::post('/clients/{id}/valider-paiement', [ClientController::class, 'validerPaiement']);
+
 
         // ✅ Validation transaction
         Route::put('/transactions/{id}', [TransactionController::class, 'update']);
         Route::post('/register-client', [ClientController::class, 'registerClient']);
+        Route::get('/external-client/{email}', [ClientController::class, 'getClientFromExternal']);
+
 
     });
 });

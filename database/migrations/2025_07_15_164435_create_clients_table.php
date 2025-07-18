@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('phone')->nullable();
             $table->decimal('montant_paye', 10, 2)->default(0);
-            $table->foreignId('revendeur_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('revendeur_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->date('date_paiement');
             $table->timestamps();
         });

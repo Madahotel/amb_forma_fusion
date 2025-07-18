@@ -66,4 +66,25 @@ class AdminController extends Controller
         ]);
     }
 
+    public function validerPaiement($clientId)
+{
+    $client = Client::findOrFail($clientId);
+    $client->statut_paiement = 'Payé';
+    $client->save();
+
+    // Commission 30% automatique
+    $montantTotal = $client->montant_total; // mila champ montant_total ao amin’ny table clients
+    $commission = $montantTotal * 0.30;
+
+    // Misoratra anarana amin’ny compte revendeur
+    $revendeur = $client->revendeur;
+    if ($revendeur) {
+        $revendeur->compte += $commission;
+        $revendeur->save();
+    }
+
+    return response()->json(['message' => 'Paiement validé et commission versée.']);
+}
+
+
 }

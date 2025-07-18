@@ -16,6 +16,12 @@ public function revendeur()
 {
     return $this->belongsTo(User::class, 'revendeur_id');
 }
+public function transactions()
+{
+    return $this->hasMany(Transaction::class);
+}
+
+
     
 }
 

@@ -63,6 +63,15 @@ return [
             ]) : [],
         ],
 
+    // 'client_db' => [
+    //     'driver' => 'mysql',
+    //     'host' => env('DB_CLIENT_HOST', '127.0.0.1'),
+    //     'database' => env('DB_CLIENT_DATABASE', 'clientdb'),
+    //     'username' => env('DB_CLIENT_USERNAME', 'root'),
+    //     'password' => env('DB_CLIENT_PASSWORD', ''),
+        
+    // ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
@@ -147,5 +156,7 @@ return [
         ],
 
     ],
+
+    
 
 ];

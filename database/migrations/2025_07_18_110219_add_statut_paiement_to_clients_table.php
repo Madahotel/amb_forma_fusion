@@ -11,14 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-Schema::create('notifications', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    $table->string('type');
-    $table->morphs('notifiable');
-    $table->text('data');
-    $table->timestamp('read_at')->nullable();
-    $table->timestamps();
-});
+        Schema::table('clients', function (Blueprint $table) {
+            $table->string('statut_paiement')->default('Non payé')->after('date_paiement');
+        });
     }
 
     /**
@@ -26,6 +21,8 @@ Schema::create('notifications', function (Blueprint $table) {
      */
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::table('clients', function (Blueprint $table) {
+            //
+        });
     }
 };

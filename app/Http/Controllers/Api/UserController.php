@@ -8,42 +8,50 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
-    public function registerRevendeur(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'pays' => 'required|string|max:100',
-            'password' => 'required|min:6|confirmed', // garde confirmed si tu envoies confirmation
-        ]);
+public function registerRevendeur(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:100',
+        'email' => 'required|email|unique:users,email',
+        'pays' => 'nullable|string|max:100', // Atambatra ao amin'ny info avy amin'ny API raha tsy misy
+        'password' => 'required|min:6|confirmed',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'revendeur',
-            'solde' => 0,
-            'pays' => $request->pays,  // Ajoute cette ligne
-        ]);
-
-        // Exemple : récupérer le code_affiliation du user (généré dans User model)
-        $code_affiliation = $user->code_affiliation ?? null;
-
+    if ($validator->fails()) {
         return response()->json([
-            'message' => 'Revendeur créé avec succès',
-            'user' => $user,
-            'code_affiliation' => $code_affiliation,
-        ], 201);
+            'errors' => $validator->errors()
+        ], 422);
     }
+
+    // --- Récupérer info client si inscription faite sur base externe ---
+    $clientData = null;
+    $response = Http::get('https://marketplace.forma-fusion.com/api/clients/email/' . $request->email);
+    if ($response->successful()) {
+        $clientData = $response->json();
+    }
+
+    // --- Création du revendeur avec données complétées ---
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => 'revendeur',
+        'solde' => 0,
+        'pays' => $request->pays ?? ($clientData['pays'] ?? null),
+    ]);
+
+    return response()->json([
+        'message' => 'Revendeur créé avec succès',
+        'user' => $user,
+        'code_affiliation' => $user->code_affiliation,
+        'link' => $user->affiliation_link,
+        'client_data' => $clientData, // Optionnel, fanampiny raha ilaina
+    ], 201);
+}
 
 
     public function indexRevendeurs()

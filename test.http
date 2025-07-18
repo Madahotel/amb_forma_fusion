@@ -1,9 +1,9 @@
 ### LOGIN
-GET http://localhost:8000/api/transactions
+GET http://localhost:8000/api/mes-clients
 Content-Type: application/json
-Authorization:  Bearer 2|gEVI6NRjyAAkxNlX2tKl0WRbYAA7slOQrmSABocA073037e1
+Authorization:  Bearer 5|oTH6l1KRoMkRMtaVvoPAjqDT3tvuHUSbLPhtqpWc74a2d5b9
 
 {
-  "email": "admin@example.com",
-  "password": "password"
+  "email": "revendeur@gmail.com",
+  "password": "12345678"
 }
