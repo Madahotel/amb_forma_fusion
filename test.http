@@ -1,7 +1,7 @@
 ### LOGIN
-GET http://localhost:8000/api/mes-clients
+Post http://localhost:8000/api/login
 Content-Type: application/json
-Authorization:  Bearer 5|oTH6l1KRoMkRMtaVvoPAjqDT3tvuHUSbLPhtqpWc74a2d5b9
+Authorization:  Bearer 33|7IV5JXUfBXkyHMSZTmjOOwdxTJGxJvNkKGK0jIPLdd1da03c
 
 {
   "email": "revendeur@gmail.com",

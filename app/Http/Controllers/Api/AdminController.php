@@ -3,48 +3,51 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
-use App\Models\User;
-use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
-
-
     public function dashboard()
     {
-        $totalClients = Client::count();
-        $totalRevendeurs = User::where('role', 'revendeur')->count();
-        $totalTransactions = Transaction::count();
+        $totalClients = DB::table('clients')->count();
+        $totalRevendeurs = DB::table('users')->where('role', 'revendeur')->count();
+        $totalTransactions = DB::table('transactions')->count();
 
-        $transactionsValidées = Transaction::where('statut', 'valide')->count();
-        $transactionsRejetées = Transaction::where('statut', 'rejeté')->count();
-        $transactionsEnAttente = Transaction::whereNull('statut')->count();
+        $transactionsValidees = DB::table('transactions')->where('statut', 'valide')->count();
+        $transactionsRejetees = DB::table('transactions')->where('statut', 'rejeté')->count();
+        $transactionsEnAttente = DB::table('transactions')->whereNull('statut')->count();
 
-        $totalCommission = Transaction::where('statut', 'valide')
-            ->sum(\DB::raw('montant * 0.3'));
+        $totalCommission = DB::table('transactions')
+            ->where('statut', 'valide')
+            ->sum(DB::raw('montant * 0.3'));
 
-        $totalPaiementValide = Transaction::where('statut', 'valide')
+        $totalPaiementValide = DB::table('transactions')
+            ->where('statut', 'valide')
             ->sum('montant');
 
         // Top 3 Revendeurs par solde
-        $topRevendeursSolde = User::where('role', 'revendeur')
-            ->orderBy('solde', 'desc')
-            ->take(3)
-            ->get(['id', 'name', 'email', 'solde']);
+        $topRevendeursSolde = DB::table('users')
+            ->where('role', 'revendeur')
+            ->orderByDesc('solde')
+            ->limit(3)
+            ->select('id', 'name', 'email', 'solde')
+            ->get();
 
-        // Top 3 Revendeurs par nombre de transactions
-        $topRevendeursTransactions = User::where('role', 'revendeur')
-            ->withCount(['transactions' => function ($query) {
-                $query->where('statut', 'valide');
-            }])
-            ->orderBy('transactions_count', 'desc')
-            ->take(3)
-            ->get(['id', 'name', 'email']);
+        // Top 3 Revendeurs par nombre de transactions validées
+        $topRevendeursTransactions = DB::table('transactions')
+            ->where('statut', 'valide')
+            ->join('users', 'transactions.revendeur_id', '=', 'users.id')
+            ->where('users.role', 'revendeur')
+            ->select('users.id', 'users.name', 'users.email', DB::raw('COUNT(transactions.id) as total_transactions'))
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->orderByDesc('total_transactions')
+            ->limit(3)
+            ->get();
 
-        // Transaction mensuelle (graphique)
-        $transactionsParMois = Transaction::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as mois, COUNT(*) as total")
+        // Transactions par mois
+        $transactionsParMois = DB::table('transactions')
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as mois, COUNT(*) as total")
             ->where('statut', 'valide')
             ->groupBy('mois')
             ->orderBy('mois')
@@ -54,37 +57,38 @@ class AdminController extends Controller
             'total_clients' => $totalClients,
             'total_revendeurs' => $totalRevendeurs,
             'total_transactions' => $totalTransactions,
-            'transactions_validées' => $transactionsValidées,
-            'transactions_rejetées' => $transactionsRejetées,
+            'transactions_validées' => $transactionsValidees,
+            'transactions_rejetées' => $transactionsRejetees,
             'transactions_en_attente' => $transactionsEnAttente,
             'total_commission' => round($totalCommission, 2),
             'total_paiement_valide' => round($totalPaiementValide, 2),
             'top_revendeurs_solde' => $topRevendeursSolde,
             'top_revendeurs_transaction' => $topRevendeursTransactions,
             'transactions_par_mois' => $transactionsParMois,
-            
         ]);
     }
 
     public function validerPaiement($clientId)
-{
-    $client = Client::findOrFail($clientId);
-    $client->statut_paiement = 'Payé';
-    $client->save();
+    {
+        // Récupération client
+        $client = DB::table('clients')->where('id', $clientId)->first();
 
-    // Commission 30% automatique
-    $montantTotal = $client->montant_total; // mila champ montant_total ao amin’ny table clients
-    $commission = $montantTotal * 0.30;
+        if (! $client) {
+            return response()->json(['message' => 'Client introuvable.'], 404);
+        }
 
-    // Misoratra anarana amin’ny compte revendeur
-    $revendeur = $client->revendeur;
-    if ($revendeur) {
-        $revendeur->compte += $commission;
-        $revendeur->save();
+        // Mise à jour statut
+        DB::table('clients')->where('id', $clientId)->update([
+            'statut_paiement' => 'Payé',
+        ]);
+
+        $montantTotal = $client->montant_total ?? 0;
+        $commission = $montantTotal * 0.30;
+
+        if ($client->revendeur_id) {
+            DB::table('users')->where('id', $client->revendeur_id)->increment('compte', $commission);
+        }
+
+        return response()->json(['message' => 'Paiement validé et commission versée.']);
     }
-
-    return response()->json(['message' => 'Paiement validé et commission versée.']);
-}
-
-
 }

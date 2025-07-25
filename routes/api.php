@@ -10,7 +10,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\PdfExportController;
-use App\Http\Controllers\Api\NotificationController; 
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,11 +30,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // 📁 Clients (CRUD)
+    // apiResource gère : GET /clients (index), POST /clients (store), GET /clients/{id} (show),
+    // PUT/PATCH /clients/{id} (update), DELETE /clients/{id} (destroy)
     Route::apiResource('clients', ClientController::class);
-    Route::get('/import-client/{email}', [ClientController::class, 'importClientFromExternal']);
-    Route::get('/mes-clients', [ClientController::class, 'myClients']);
-    Route::patch('/clients/{id}/paiement', [ClientController::class, 'updateStatutPaiement']);
 
+    // Route pour l'importation de client par email (renommée la méthode dans le contrôleur)
+    Route::get('/import-client/{email}', [ClientController::class, 'importClient']); // Corrigé: importClient
+
+    // Route pour les clients d'un revendeur
+    Route::get('/mes-clients', [ClientController::class, 'myClients']);
+
+    // Route pour la mise à jour du statut de paiement
+    Route::patch('/clients/{id}/update-statut', [ClientController::class, 'updateStatutPaiement']); // Corrigé: update-statut
 
     // 📄 Transactions (accessible à tous pour list & show)
     Route::get('/transactions', [TransactionController::class, 'index']);
@@ -65,15 +72,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         // 📊 Dashboard & Export Excel
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
         Route::get('/export-transactions', [ExportController::class, 'exportTransactions']);
-        // Route::post('/valider-paiement/{id}', [AdminController::class, 'validerPaiement']);
+        
+        // Route pour valider le paiement final (déjà correcte)
         Route::post('/clients/{id}/valider-paiement', [ClientController::class, 'validerPaiement']);
-
 
         // ✅ Validation transaction
         Route::put('/transactions/{id}', [TransactionController::class, 'update']);
-        Route::post('/register-client', [ClientController::class, 'registerClient']);
-        Route::get('/external-client/{email}', [ClientController::class, 'getClientFromExternal']);
-
-
+        
+        // Ces routes sont maintenant gérées par apiResource ou renommées/supprimées
+        // Route::post('/register-client', [ClientController::class, 'registerClient']); // Supprimée (gérée par apiResource)
+        // Route::get('/external-client/{email}', [ClientController::class, 'getClientFromExternal']); // Supprimée (remplacée par import-client)
     });
 });

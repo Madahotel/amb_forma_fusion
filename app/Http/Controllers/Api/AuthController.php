@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -20,11 +21,14 @@ class AuthController extends Controller
             'role' => 'in:admin,revendeur',
         ]);
 
-        $user = User::create([
+        // Insertion via Query Builder
+        DB::table('users')->insert([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role ?? 'revendeur',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return response()->json(['message' => 'Utilisateur enregistré avec succès']);
@@ -38,13 +42,17 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Récupérer l'utilisateur avec Query Builder
+        $userData = DB::table('users')->where('email', $request->email)->first();
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $userData || ! Hash::check($request->password, $userData->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Email ou mot de passe invalide'],
             ]);
         }
+
+        // On recharge l'utilisateur en tant que modèle Eloquent juste pour le token
+        $user = User::find($userData->id);
 
         $token = $user->createToken('api-token')->plainTextToken;
 

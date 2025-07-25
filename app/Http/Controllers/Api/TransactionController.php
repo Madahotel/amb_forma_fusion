@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Transaction;
 use App\Notifications\RetraitDemandeNotification;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class TransactionController extends Controller
 {
@@ -16,23 +16,23 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
-        $query = Transaction::with(['client', 'revendeur']); // ⬅️ Ajout important
+        $query = DB::table('transactions')
+            ->select('transactions.*', 'u.name as revendeur_name', 'c.name as client_name')
+            ->leftJoin('users as u', 'transactions.revendeur_id', '=', 'u.id')
+            ->leftJoin('users as c', 'transactions.client_id', '=', 'c.id');
 
         if ($user->role === 'revendeur') {
-            $query->where('revendeur_id', $user->id);
+            $query->where('transactions.revendeur_id', $user->id);
         }
 
         if ($request->filled('start') && $request->filled('end')) {
-            $query->whereBetween('created_at', [$request->start, $request->end]);
+            $query->whereBetween('transactions.created_at', [$request->start, $request->end]);
         }
 
         return response()->json(
-            $query->orderBy('created_at', 'desc')->get()
+            $query->orderBy('transactions.created_at', 'desc')->get()
         );
     }
-
-
-
 
     public function store(Request $request)
     {
@@ -43,11 +43,11 @@ class TransactionController extends Controller
 
         $user = Auth::user();
 
-        // Vérifier si le solde est suffisant
+        // Vérifier solde
         if ($user->solde <= 0) {
             return response()->json([
                 'message' => 'Solde insuffisant pour effectuer une transaction.'
-            ], 403); // 403 = Forbidden
+            ], 403);
         }
 
         if ($request->montant > $user->solde) {
@@ -56,18 +56,26 @@ class TransactionController extends Controller
             ], 403);
         }
 
-        $transaction = Transaction::create([
+        // Insert transaction
+        $id = DB::table('transactions')->insertGetId([
             'revendeur_id' => $user->id,
             'montant' => $request->montant,
             'moyen_paiement' => $request->moyen_paiement,
             'statut' => 'en_attente',
             'date_demande' => Carbon::now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
+        $transaction = Transaction::findOrFail($id);
+
         // Notify admins
-        $admins = User::where('role', 'admin')->get();
+        $admins = DB::table('users')->where('role', 'admin')->get();
         foreach ($admins as $admin) {
-            $admin->notify(new RetraitDemandeNotification($transaction));
+            // Tokony atao hoe model User ilay Notification
+            \App\Models\User::find($admin->id)->notify(
+                new RetraitDemandeNotification($transaction)
+            );
         }
 
         return response()->json([
@@ -76,7 +84,6 @@ class TransactionController extends Controller
         ]);
     }
 
-
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -84,28 +91,49 @@ class TransactionController extends Controller
             'note' => 'nullable|string'
         ]);
 
-        $transaction = Transaction::findOrFail($id);
-        $transaction->statut = $request->statut;
-        $transaction->note = $request->note;
-        $transaction->admin_id_validator = Auth::id();
-        $transaction->date_validation = now();
-        $transaction->save();
+        $transaction = DB::table('transactions')->where('id', $id)->first();
 
-        // Si validé, déduire le solde du revendeur
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction introuvable'], 404);
+        }
+
+        DB::table('transactions')->where('id', $id)->update([
+            'statut' => $request->statut,
+            'note' => $request->note,
+            'admin_id_validator' => Auth::id(),
+            'date_validation' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Si validé, déduire solde
         if ($request->statut === 'valide') {
-            $revendeur = User::find($transaction->revendeur_id);
-            $revendeur->solde -= $transaction->montant;
-            $revendeur->save();
+            $revendeur = DB::table('users')->where('id', $transaction->revendeur_id)->first();
+
+            if ($revendeur) {
+                $nouveauSolde = $revendeur->solde - $transaction->montant;
+                DB::table('users')->where('id', $revendeur->id)->update([
+                    'solde' => $nouveauSolde,
+                    'updated_at' => now()
+                ]);
+            }
         }
 
         return response()->json(['message' => 'Transaction mise à jour']);
     }
 
-
-    // GET ONE
     public function show($id)
     {
-        $transaction = Transaction::with(['revendeur', 'validator'])->findOrFail($id);
+        $transaction = DB::table('transactions')
+            ->leftJoin('users as r', 'transactions.revendeur_id', '=', 'r.id')
+            ->leftJoin('users as v', 'transactions.admin_id_validator', '=', 'v.id')
+            ->select('transactions.*', 'r.name as revendeur_name', 'v.name as validator_name')
+            ->where('transactions.id', $id)
+            ->first();
+
+        if (!$transaction) {
+            return response()->json(['message' => 'Transaction non trouvée'], 404);
+        }
+
         return response()->json($transaction);
     }
 }

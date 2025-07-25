@@ -1,39 +1,33 @@
 <?php
 
 return [
-
-    /*
-    |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
-    */
-
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
-
-
-
-'credentials' => true,
+    'paths' => [
+        'api/*', 
+        'sanctum/csrf-cookie',
+        'export-transactions' // Ajoutez cette ligne
+    ],
 
     'allowed_methods' => ['*'],
 
-
-'allowed_origins' => ['http://localhost:3000'], 
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'https://votre-frontend.com' // Remplacez par votre domaine de prod
+    ],
 
     'allowed_origins_patterns' => [],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'X-CSRF-TOKEN'
+    ],
 
-    'exposed_headers' => [],
+    'exposed_headers' => [
+        'Content-Disposition' // Essentiel pour les téléchargements
+    ],
 
-    'max_age' => 0,
+    'max_age' => 86400, // 24 heures
 
-    'supports_credentials' => false,
-
+    'supports_credentials' => true, // Doit être true pour les cookies/auth
 ];
